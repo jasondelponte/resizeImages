@@ -79,7 +79,6 @@ func main() {
 			targetWidth = uint((float64(img.Bounds().Max.X) / float64(img.Bounds().Max.Y)) * float64(targetHeight))
 		}
 
-		log.Println(targetWidth, targetHeight, img.Bounds())
 		resizedImg := resize.Resize(targetWidth, targetHeight, img, resize.NearestNeighbor)
 
 		newFilename := makeNewFilName(v.Name(), resizedImg.Bounds())
