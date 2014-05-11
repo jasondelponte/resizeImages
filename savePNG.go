@@ -6,6 +6,8 @@ import (
 	"os"
 )
 
-func savePNGImage(file *os.File, img image.Image) error {
+type SavePNGImage struct{}
+
+func (s SavePNGImage) Save(file *os.File, img image.Image) error {
 	return png.Encode(file, img)
 }

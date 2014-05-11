@@ -6,6 +6,8 @@ import (
 	"os"
 )
 
-func saveJPEGImage(file *os.File, img image.Image) error {
+type SaveJPEGImage struct{}
+
+func (s SaveJPEGImage) Save(file *os.File, img image.Image) error {
 	return jpeg.Encode(file, img, &jpeg.Options{Quality: 100})
 }

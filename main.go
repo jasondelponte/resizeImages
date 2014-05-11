@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/nfnt/resize"
 	"image"
+	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
 	"io/ioutil"
@@ -15,12 +16,18 @@ import (
 	"strings"
 )
 
+type SaveImage interface {
+	Save(*os.File, image.Image) error
+}
+
+var supportedFormats = make(map[string]SaveImage)
+
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	supportedFormats := make(map[string]struct{})
-	supportedFormats["jpeg"] = struct{}{}
-	supportedFormats["png"] = struct{}{}
+	supportedFormats["jpeg"] = &SaveJPEGImage{}
+	supportedFormats["png"] = &SavePNGImage{}
+	// supportedFormats["gif"] = &SaveGIFImage{} // Disabled until mor elogic is added to saveGIF
 
 	var imgPath string
 	var targetWidth, targetHeight, targetPercent uint
@@ -113,14 +120,12 @@ func saveImage(filePath string, img image.Image, format string) error {
 	}
 	defer file.Close()
 
-	if format == "jpeg" {
-		if err = saveJPEGImage(file, img); err != nil {
-			return fmt.Errorf("Failed writing image as JPEG to file: %s", err)
+	if saver, supported := supportedFormats[format]; supported {
+		if err = saver.Save(file, img); err != nil {
+			return fmt.Errorf("Failed writing image as %s to file: %s", format, err)
 		}
-	} else if format == "png" {
-		if err = savePNGImage(file, img); err != nil {
-			return fmt.Errorf("Failed writing image as PNG to file: %s", err)
-		}
+	} else {
+		return fmt.Errorf("Attempted to write an unsupported format: %s", format)
 	}
 
 	return nil
