@@ -17,7 +17,9 @@ Simple utility to resize images within a directory.
 
 ## Example:
 > ./resizeImages -p /home/user/Photos -w 800 -h 600
+
 > ./resizeImages -p /home/user/Photos -w 800 -rw
+
 > ./resizeImages -p /home/user/Photos -precent 50
 
 [![baby-gopher](https://raw2.github.com/drnic/babygopher-site/gh-pages/images/babygopher-badge.png)](http://www.babygopher.org)
