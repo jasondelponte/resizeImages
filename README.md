@@ -1,7 +1,7 @@
 resizeImages
 ============
 
-Simple utility to resize images within a directory.
+Simple utility to resize JPEG and PNG images by directory.
 
 ## Parameters:
  * p, containing folder of the images to be resized
