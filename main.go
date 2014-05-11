@@ -18,7 +18,7 @@ func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	var imgPath string
-	var targetWidth, targetHeight uint
+	var targetWidth, targetHeight, targetPercent uint
 	var ratioWidth, ratioHeight bool
 
 	flag.StringVar(&imgPath, "p", "./", "Path to resize images from")
@@ -26,10 +26,14 @@ func main() {
 	flag.UintVar(&targetHeight, "h", 768, "Resized height of image")
 	flag.BoolVar(&ratioWidth, "rw", false, "Use only width input, and height will be calculated maintaining ratio")
 	flag.BoolVar(&ratioHeight, "rh", false, "Use only height input, and height will be calculated maintaining ratio")
+	flag.UintVar(&targetPercent, "percent", 100, "Resizes the image by a percentage, maintianing ratio")
 	flag.Parse()
 
 	if ratioHeight && ratioWidth {
 		log.Fatalln("Cannot use both calculated ration for height and width")
+	}
+	if (ratioHeight || ratioWidth) && targetPercent != 100 {
+		log.Fatalln("Cannot use both ration Height/Width and percentage")
 	}
 
 	fileInfos, err := ioutil.ReadDir(imgPath)
@@ -52,6 +56,12 @@ func main() {
 		if format != "jpeg" {
 			log.Println("Unsupported format", format, v.Name())
 			continue
+		}
+
+		if targetPercent != 100 {
+			// Calculates the target width and height for the given percentage resize.
+			ratioWidth = true
+			targetWidth = uint(float64(img.Bounds().Max.X) * (float64(targetPercent) / float64(100)))
 		}
 
 		if ratioWidth {
