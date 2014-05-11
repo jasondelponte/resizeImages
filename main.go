@@ -6,6 +6,7 @@ import (
 	"github.com/nfnt/resize"
 	"image"
 	_ "image/jpeg"
+	_ "image/png"
 	"io/ioutil"
 	"log"
 	"os"
@@ -16,6 +17,10 @@ import (
 
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
+
+	supportedFormats := make(map[string]struct{})
+	supportedFormats["jpeg"] = struct{}{}
+	supportedFormats["png"] = struct{}{}
 
 	var imgPath string
 	var targetWidth, targetHeight, targetPercent uint
@@ -53,7 +58,7 @@ func main() {
 			continue
 		}
 
-		if format != "jpeg" {
+		if _, supported := supportedFormats[format]; !supported {
 			log.Println("Unsupported format:", format, v.Name())
 			continue
 		}
@@ -67,13 +72,14 @@ func main() {
 		if ratioWidth {
 			// Calculates the height from a target width maintaing the image's ration;
 			// e.g. 1200/1600 * 400 = 300
-			targetHeight = uint(img.Bounds().Max.X/img.Bounds().Max.Y) * targetWidth
+			targetHeight = uint((float64(img.Bounds().Max.Y) / float64(img.Bounds().Max.X)) * float64(targetWidth))
 		} else if ratioHeight {
 			// Calculates the width from a target height maintaing the image's ration;
 			// e.g. 1600/1200 * 300 = 400
-			targetWidth = uint(img.Bounds().Max.Y/img.Bounds().Max.X) * targetHeight
+			targetWidth = uint((float64(img.Bounds().Max.X) / float64(img.Bounds().Max.Y)) * float64(targetHeight))
 		}
 
+		log.Println(targetWidth, targetHeight, img.Bounds())
 		resizedImg := resize.Resize(targetWidth, targetHeight, img, resize.NearestNeighbor)
 
 		newFilename := makeNewFilName(v.Name(), resizedImg.Bounds())
@@ -110,6 +116,10 @@ func saveImage(filePath string, img image.Image, format string) error {
 
 	if format == "jpeg" {
 		if err = saveJPEGImage(file, img); err != nil {
+			return fmt.Errorf("Failed writing image as JPEG to file: %s", err)
+		}
+	} else if format == "png" {
+		if err = savePNGImage(file, img); err != nil {
 			return fmt.Errorf("Failed writing image as JPEG to file: %s", err)
 		}
 	}
