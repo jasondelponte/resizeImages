@@ -12,7 +12,7 @@ Simple utility to resize JPEG and PNG images by directory.
  * precent, scales the image by a percentage maintaining its aspect ratio
 
 ## Usage:
-* Ratio width and height will use their coorisponding height and width values provided in the commandline arguments.  Both ratio height and width cannot be provided at the same time.
+* Ratio width and height will use their corresponding height and width values provided in the commandline arguments.  Both ratio height and width cannot be provided at the same time.
 * Percent scaling will ignore given width and height, and is incompatable with ratio width and height
 
 ## Example:
