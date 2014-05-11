@@ -119,7 +119,7 @@ func saveImage(filePath string, img image.Image, format string) error {
 		}
 	} else if format == "png" {
 		if err = savePNGImage(file, img); err != nil {
-			return fmt.Errorf("Failed writing image as JPEG to file: %s", err)
+			return fmt.Errorf("Failed writing image as PNG to file: %s", err)
 		}
 	}
 
