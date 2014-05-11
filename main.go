@@ -19,11 +19,18 @@ func main() {
 
 	var imgPath string
 	var targetWidth, targetHeight uint
+	var ratioWidth, ratioHeight bool
 
 	flag.StringVar(&imgPath, "p", "./", "Path to resize images from")
 	flag.UintVar(&targetWidth, "w", 1152, "Resized width of image")
 	flag.UintVar(&targetHeight, "h", 768, "Resized height of image")
+	flag.BoolVar(&ratioWidth, "rw", false, "Use only width input, and height will be calculated maintaining ratio")
+	flag.BoolVar(&ratioHeight, "rh", false, "Use only height input, and height will be calculated maintaining ratio")
 	flag.Parse()
+
+	if ratioHeight && ratioWidth {
+		log.Fatalln("Cannot use both calculated ration for height and width")
+	}
 
 	fileInfos, err := ioutil.ReadDir(imgPath)
 	if err != nil {
@@ -45,6 +52,16 @@ func main() {
 		if format != "jpeg" {
 			log.Println("Unsupported format", format, v.Name())
 			continue
+		}
+
+		if ratioWidth {
+			// Calculates the height from a target width maintaing the image's ration;
+			// e.g. 1200/1600 * 400 = 300
+			targetHeight = uint(img.Bounds().Max.X/img.Bounds().Max.Y) * targetWidth
+		} else if ratioHeight {
+			// Calculates the width from a target height maintaing the image's ration;
+			// e.g. 1600/1200 * 300 = 400
+			targetWidth = uint(img.Bounds().Max.Y/img.Bounds().Max.X) * targetHeight
 		}
 
 		resizedImg := resize.Resize(targetWidth, targetHeight, img, resize.NearestNeighbor)
