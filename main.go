@@ -33,7 +33,7 @@ func main() {
 		log.Fatalln("Cannot use both calculated ration for height and width")
 	}
 	if (ratioHeight || ratioWidth) && targetPercent != 100 {
-		log.Fatalln("Cannot use both ration Height/Width and percentage")
+		log.Fatalln("Cannot use both ratio Height/Width and percentage")
 	}
 
 	fileInfos, err := ioutil.ReadDir(imgPath)
