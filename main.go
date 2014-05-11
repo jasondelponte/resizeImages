@@ -49,12 +49,12 @@ func main() {
 
 		img, format, err := openImage(filepath.Join(imgPath, v.Name()))
 		if err != nil {
-			log.Println("Failed to resize", v.Name(), err)
+			log.Println("Image Open failed:", v.Name(), err)
 			continue
 		}
 
 		if format != "jpeg" {
-			log.Println("Unsupported format", format, v.Name())
+			log.Println("Unsupported format:", format, v.Name())
 			continue
 		}
 
@@ -89,15 +89,13 @@ func main() {
 func openImage(filePath string) (image.Image, string, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
-		log.Println("Failed to open image")
-		return nil, "", err
+		return nil, "", fmt.Errorf("Failed to open image: %s", err)
 	}
 	defer file.Close()
 
 	img, format, err := image.Decode(file)
 	if err != nil {
-		log.Println("Failed to decode image")
-		return nil, "", err
+		return nil, "", fmt.Errorf("Failed to decode image: %s", err)
 	}
 
 	return img, format, nil
@@ -106,15 +104,13 @@ func openImage(filePath string) (image.Image, string, error) {
 func saveImage(filePath string, img image.Image, format string) error {
 	file, err := os.Create(filePath)
 	if err != nil {
-		log.Println("Failed to create resized image file")
-		return err
+		return fmt.Errorf("Failed to create resized image file: %s", err)
 	}
 	defer file.Close()
 
 	if format == "jpeg" {
 		if err = saveJPEGImage(file, img); err != nil {
-			log.Println("Failed writing image as JPEG to file")
-			return err
+			return fmt.Errorf("Failed writing image as JPEG to file: %s", err)
 		}
 	}
 
