@@ -30,7 +30,7 @@ func main() {
 	flag.Parse()
 
 	if ratioHeight && ratioWidth {
-		log.Fatalln("Cannot use both calculated ration for height and width")
+		log.Fatalln("Cannot use both calculated ratio for height and width")
 	}
 	if (ratioHeight || ratioWidth) && targetPercent != 100 {
 		log.Fatalln("Cannot use both ratio Height/Width and percentage")
