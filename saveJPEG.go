@@ -3,11 +3,13 @@ package main
 import (
 	"image"
 	"image/jpeg"
-	"os"
+	"io"
 )
 
-type SaveJPEGImage struct{}
+func NewJPEGManipulator(reader io.ReadSeeker, format string, image image.Image) (Manipulator, error) {
+	return NewGenericManipulator(image, format, jpegSaver), nil
+}
 
-func (s SaveJPEGImage) Save(file *os.File, img image.Image) error {
-	return jpeg.Encode(file, img, &jpeg.Options{Quality: 100})
+func jpegSaver(writer io.Writer, img image.Image) error {
+	return jpeg.Encode(writer, img, &jpeg.Options{Quality: 100})
 }

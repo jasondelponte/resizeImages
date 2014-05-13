@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/nfnt/resize"
 	"image"
 	_ "image/gif"
 	_ "image/jpeg"
@@ -20,14 +19,14 @@ type SaveImage interface {
 	Save(*os.File, image.Image) error
 }
 
-var supportedFormats = make(map[string]SaveImage)
+var supportedFormats = make(map[string]NewManipulator)
 
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	supportedFormats["jpeg"] = &SaveJPEGImage{}
-	supportedFormats["png"] = &SavePNGImage{}
-	// supportedFormats["gif"] = &SaveGIFImage{} // Disabled until mor elogic is added to saveGIF
+	supportedFormats["jpeg"] = NewJPEGManipulator
+	supportedFormats["png"] = NewPNGManipulator
+	supportedFormats["gif"] = NewGIFManipulator
 
 	var imgPath string
 	var targetWidth, targetHeight, targetPercent uint
@@ -59,76 +58,67 @@ func main() {
 			continue
 		}
 
-		img, format, err := openImage(filepath.Join(imgPath, v.Name()))
+		manipulator, err := loadImage(filepath.Join(imgPath, v.Name()))
 		if err != nil {
 			log.Println("Image Open failed:", v.Name(), err)
 			continue
 		}
 
-		if _, supported := supportedFormats[format]; !supported {
-			log.Println("Unsupported format:", format, v.Name())
-			continue
-		}
-
+		// Resize the image
 		if targetPercent != 100 {
 			// Calculates the target width and height for the given percentage resize.
 			ratioWidth = true
-			targetWidth = uint(float64(img.Bounds().Max.X) * (float64(targetPercent) / float64(100)))
+			targetWidth = uint(float64(manipulator.Bounds().Max.X) * (float64(targetPercent) / float64(100)))
 		}
 
 		if ratioWidth {
 			// Calculates the height from a target width maintaing the image's ration;
-			// e.g. 1200/1600 * 400 = 300
-			targetHeight = uint((float64(img.Bounds().Max.Y) / float64(img.Bounds().Max.X)) * float64(targetWidth))
+			// e.g. height/width * targetWidth = matchingHeight
+			targetHeight = uint((float64(manipulator.Bounds().Max.Y) / float64(manipulator.Bounds().Max.X)) * float64(targetWidth))
 		} else if ratioHeight {
 			// Calculates the width from a target height maintaing the image's ration;
-			// e.g. 1600/1200 * 300 = 400
-			targetWidth = uint((float64(img.Bounds().Max.X) / float64(img.Bounds().Max.Y)) * float64(targetHeight))
+			// e.g. width/height * targetHeight = matchingWidth
+			targetWidth = uint((float64(manipulator.Bounds().Max.X) / float64(manipulator.Bounds().Max.Y)) * float64(targetHeight))
+		}
+		manipulator.Resize(targetWidth, targetHeight)
+
+		// Save the image
+		if err := saveImage(imgPath, v.Name(), manipulator); err != nil {
+			log.Println("Failed to save resized image:", err)
+			continue
 		}
 
-		resizedImg := resize.Resize(targetWidth, targetHeight, img, resize.NearestNeighbor)
-
-		newFilename := makeNewFilName(v.Name(), resizedImg.Bounds())
-		newFilePath := filepath.Join(imgPath, newFilename)
-		if err := saveImage(newFilePath, resizedImg, format); err != nil {
-			log.Println("Failed to save resized image", err)
-		}
-
-		log.Println("Resized", v.Name(), "to", newFilename, "format", format)
+		log.Println("Resized", v.Name(), "to", manipulator.Bounds().Max.String(), "format", manipulator.Format())
 	}
 }
 
-func openImage(filePath string) (image.Image, string, error) {
+func loadImage(filePath string) (Manipulator, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
-		return nil, "", fmt.Errorf("Failed to open image: %s", err)
+		return nil, fmt.Errorf("Failed to open image: %s", err)
 	}
 	defer file.Close()
 
 	img, format, err := image.Decode(file)
 	if err != nil {
-		return nil, "", fmt.Errorf("Failed to decode image: %s", err)
+		return nil, fmt.Errorf("Failed to decode image: %s", err)
 	}
 
-	return img, format, nil
+	manipGenerator, supported := supportedFormats[format]
+	if !supported {
+		return nil, fmt.Errorf("format, %s, not supported", format)
+	}
+
+	return manipGenerator(file, format, img)
 }
 
-func saveImage(filePath string, img image.Image, format string) error {
-	file, err := os.Create(filePath)
+func saveImage(imgPath, origFilename string, manipulator Manipulator) error {
+	filename := makeNewFilName(origFilename, manipulator.Bounds())
+	file, err := os.Create(filepath.Join(imgPath, filename))
 	if err != nil {
-		return fmt.Errorf("Failed to create resized image file: %s", err)
+		log.Println("Failed to create resized file:", err)
 	}
-	defer file.Close()
-
-	if saver, supported := supportedFormats[format]; supported {
-		if err = saver.Save(file, img); err != nil {
-			return fmt.Errorf("Failed writing image as %s to file: %s", format, err)
-		}
-	} else {
-		return fmt.Errorf("Attempted to write an unsupported format: %s", format)
-	}
-
-	return nil
+	return manipulator.Save(file)
 }
 
 func makeNewFilName(origName string, bounds image.Rectangle) string {

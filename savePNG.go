@@ -3,11 +3,13 @@ package main
 import (
 	"image"
 	"image/png"
-	"os"
+	"io"
 )
 
-type SavePNGImage struct{}
+func NewPNGManipulator(reader io.ReadSeeker, format string, image image.Image) (Manipulator, error) {
+	return NewGenericManipulator(image, format, pngSaver), nil
+}
 
-func (s SavePNGImage) Save(file *os.File, img image.Image) error {
-	return png.Encode(file, img)
+func pngSaver(writer io.Writer, img image.Image) error {
+	return png.Encode(writer, img)
 }
