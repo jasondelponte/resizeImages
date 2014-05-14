@@ -118,6 +118,7 @@ func saveImage(imgPath, origFilename string, manipulator Manipulator) error {
 	if err != nil {
 		log.Println("Failed to create resized file:", err)
 	}
+	defer file.Close()
 	return manipulator.Save(file)
 }
 
